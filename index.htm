@@ -94,8 +94,8 @@
           .style('opacity', '1');
       } else {
         // Fallback to canvas
-        var width = screen.width;
-        var height = screen.height;
+        var width = Math.max(screen.width, window.outerWidth);
+        var height = Math.max(screen.height, window.outerHeight);
         var canvas = d3.select('body')
           .append('canvas')
           .attr('id', 'canvas')
