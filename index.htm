@@ -20,7 +20,7 @@
       bottom: 5%;
       right: 10%;
     }
-    svg {
+    #canvas {
       position:fixed;
       top:0;
       left:0;
@@ -63,31 +63,63 @@
         return function(p,i){ return p ? scale(0.8 - 0.6 * (p[0] + p[1]) / 2 - 0.2 * (i/num)) : 0; }
       }();
       
-      var canvas = d3.select('body')
-        .append('svg')
-        .attr('viewBox', '0 0 1 1')
-        .attr('preserveAspectRatio', 'xMidYMid slice');     
-      var cells = canvas
-        .selectAll('path')
-        .data(points);
-      cells.enter()
-        .append('path')
-        .attr('d', function(d, i){
-          return "M" + voronoi[i].join("L") + "Z";
-        })
-        .attr('stroke-width', '0.001')
-        .attr('fill', 'white')
-        .attr('stroke', 'white');      
-      cells
-        .transition()
-        .delay(delay)
-        .attr('fill', colour)
-        .attr('stroke', colour);        
-      d3.select('h1')
-        .style('opacity', '0')
-        .transition()
-        .duration(1500)
-        .style('opacity', '1');
+      var svgSupported = document.implementation.hasFeature("http://www.w3.org/TR/SVG11/feature#BasicStructure", "1.1");
+      if(svgSupported)
+      {
+        var canvas = d3.select('body')
+          .append('svg')
+          .attr('id', 'canvas')
+          .attr('viewBox', '0 0 1 1')
+          .attr('preserveAspectRatio', 'xMidYMid slice');
+        var cells = canvas
+          .selectAll('path')
+          .data(points);
+        cells.enter()
+          .append('path')
+          .attr('d', function(d, i){
+            return "M" + voronoi[i].join("L") + "Z";
+          })
+          .attr('stroke-width', '0.001')
+          .attr('fill', 'white')
+          .attr('stroke', 'white');      
+        cells
+          .transition()
+          .delay(delay)
+          .attr('fill', colour)
+          .attr('stroke', colour);        
+        d3.select('h1')
+          .style('opacity', '0')
+          .transition()
+          .duration(1500)
+          .style('opacity', '1');
+      } else {
+        // Fallback to canvas
+        var width = screen.width;
+        var height = screen.height;
+        var canvas = d3.select('body')
+          .append('canvas')
+          .attr('id', 'canvas')
+          .attr('width', width)
+          .attr('height', height);
+        var x = function(r){ return r * width; };
+        var y = function(r){ return r * height; };
+        var context = canvas.node().getContext('2d');
+        context.clearRect(0,0,width,height);
+        points.forEach(function(p, i){
+          var vertices = voronoi[i];
+          context.beginPath();
+          context.fillStyle = colour(p,i).toString();
+          context.strokeStyle = colour(p,i).toString();
+          context.lineWidth = 2;
+          context.moveTo(x(vertices[0][0]), y(vertices[0][1]));
+          for(var i = 1; i < vertices.length; i++){
+            context.lineTo(x(vertices[i][0]), y(vertices[i][1]));
+          }
+          context.closePath();
+          context.fill();
+          context.stroke();
+        });
+      }
     };
     background(500, Math.random() * 360)
   </script>
