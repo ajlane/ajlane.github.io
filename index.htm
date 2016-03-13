@@ -60,21 +60,92 @@
     var image = function(url){
       var img = document.createElement('img');
       img.src = url;
+
+      var samplesX = 120, samplesY = 120;
+
       var context = document.createElement('canvas').getContext("2d");
-      
-      var samplesX = 30, samplesY = 30;
-      
       context.drawImage(img, 0, 0, samplesX, samplesY);
       var pixels = context.getImageData(0,0,samplesX,samplesY).data;
+
       var points = [];
-      
       for(var y = 0; y < samplesY; y++){
         for(var x = 0; x< samplesX; x++){
           var p = 4 * samplesY * y + 4 * x;
-          points.push([x/samplesX + (Math.random() * 0.1 - 0.05),y/samplesY + (Math.random() * 0.1 - 0.05), d3.rgb.apply(d3.rgb, Array.prototype.slice.call(pixels, p, p+3))]);
+          var colour = Array.prototype.slice.call(pixels, p, p+3);
+          points.push([
+            x/samplesX + (Math.random() * 0.1 - 0.05),
+            y/samplesY + (Math.random() * 0.1 - 0.05),
+            d3.rgb.apply(d3.rgb,colour)
+          ]);
         }
       }
-      return points;
+
+      var filtered = [];
+
+      var quadtree = d3.geom.quadtree()(points);
+      function postOrder(parent, action){
+        if(!parent.iseaf){
+          for(var i = 0; i < 4; i++){
+            var child = parent.nodes[i];
+            if(child) postOrder(child, action);
+          }
+        }
+        if(action) action(parent);
+      }
+      postOrder(quadtree, function(node){
+        if(!node.leaf){
+          node.minHue = 360;
+          node.maxHue = 0;
+          node.minSat = 1;
+          node.maxSat = 0;
+          node.minLight = 1;
+          node.maxLight = 0;
+          node.points = [];
+          for(var i = 0; i < 4; i++){
+            var child = node.nodes[i];
+            if(child){
+              if(child.minHue < node.minHue) node.minHue = child.minHue;
+              if(child.maxHue > node.maxHue) node.maxHue = child.maxHue;
+              if(child.minSat < node.minSat) node.minSat = child.minSat;
+              if(child.maxSat > node.maxSat) node.maxSat = child.maxSat;
+              if(child.minLight < node.minLight) node.minLight = child.minLight;
+              if(child.maxLight > node.maxLight) node.maxLight = child.maxLight;
+              node.points.push(child.point);
+            }
+          }
+          node.hueRange = Math.max(0, node.maxHue - node.minHue);
+          node.satRange = Math.max(0, node.maxSat - node.minSat);
+          node.lightRange = Math.max(0, node.maxLight - node.minLight);
+          node.point = [
+            node.points.reduce(function(a,b){ return a + b[0]}, 0) / node.points.length,
+            node.points.reduce(function(a,b){ return a + b[1]}, 0) / node.points.length,
+            node.points[0][2]
+          ];
+          node.points = null;
+        } else {
+          var hue = node.point[2].hsl().h;
+          var sat = node.point[2].hsl().s;
+          var light = node.point[2].hsl().l;
+          node.minHue = hue;
+          node.maxHue = hue;
+          node.minSat = sat;
+          node.maxSat = sat;
+          node.minLight = light;
+          node.maxLight = light;
+          node.hueRange = 0;
+          node.satRange = 0;
+          node.lightRange = 0;
+        }
+      });
+      quadtree.visit(function(node){
+        if(node.hueRange < 120 && node.satRange < 0.5 && node.lightRange < 0.5){
+          filtered.push(node.point);
+          return true;
+        }
+        return false;
+      });
+
+      return filtered;
     };
     var background = function(points){
       if(!points || !points.length) return;
