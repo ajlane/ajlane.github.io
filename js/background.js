@@ -110,7 +110,7 @@ void main() {
     });
   }
 
-  function pointsFromImage(img) {
+  function pointsFromImage(img, base) {
     const aspect = canvas.width / canvas.height;
     const scale = Math.sqrt(aspect);
     const samplesX = Math.max(1, Math.round(SAMPLES * scale));
@@ -119,24 +119,24 @@ void main() {
     ctx.drawImage(img, 0, 0, samplesX, samplesY);
     const pixels = ctx.getImageData(0, 0, samplesX, samplesY).data;
     const pts = [];
-    for (let y = 0; y < samplesY; y++) {
-      for (let x = 0; x < samplesX; x++) {
-        const p = 4 * (y * samplesX + x);
-        pts.push([
-          x / samplesX + (Math.random() * 0.1 - 0.05),
-          y / samplesY + (Math.random() * 0.1 - 0.05),
-          [pixels[p] / 255, pixels[p + 1] / 255, pixels[p + 2] / 255]
-        ]);
-      }
+    for (let i = 0; i < base.length; i++) {
+      const x = i % samplesX;
+      const y = Math.floor(i / samplesX);
+      const p = 4 * (y * samplesX + x);
+      pts.push([
+        base[i][0],
+        base[i][1],
+        [pixels[p] / 255, pixels[p + 1] / 255, pixels[p + 2] / 255]
+      ]);
     }
     return pts;
   }
 
-  function loadImage(src) {
+  function loadImage(src, base) {
     return new Promise(resolve => {
       const img = new Image();
       img.crossOrigin = 'anonymous';
-      img.onload = () => resolve(pointsFromImage(img));
+      img.onload = () => resolve(pointsFromImage(img, base));
       img.src = src;
     });
   }
@@ -242,7 +242,7 @@ void main() {
       if (files[i].type.match(/image.*/)) {
         const reader = new FileReader();
         reader.onloadend = () => {
-          loadImage(reader.result).then(setTarget);
+          loadImage(reader.result, currentPoints).then(setTarget);
         };
         reader.readAsDataURL(files[i]);
         break;
