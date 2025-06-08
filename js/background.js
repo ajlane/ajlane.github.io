@@ -9,8 +9,11 @@
   const SAMPLES = 30; // number of points per row/column
 
   function resize() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = window.innerWidth * dpr;
+    canvas.height = window.innerHeight * dpr;
+    canvas.style.width = window.innerWidth + 'px';
+    canvas.style.height = window.innerHeight + 'px';
     gl.viewport(0, 0, canvas.width, canvas.height);
   }
   window.addEventListener('resize', resize);
@@ -110,6 +113,11 @@ void main() {
   }
 
   function setTarget(points) {
+    if (progress > 0 && progress < 1) {
+      const now = performance.now();
+      currentPoints = interpolatePoints(now - lastTime);
+      lastTime = now;
+    }
     targetPoints = points;
     progress = 0;
   }
@@ -126,7 +134,7 @@ void main() {
       progress = 1;
       currentPoints = targetPoints;
     }
-    const t = progress;
+    const t = progress * progress * (3 - 2 * progress);
     return currentPoints.map((p, i) => {
       const np = targetPoints[i];
       return [
