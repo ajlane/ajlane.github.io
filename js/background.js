@@ -85,6 +85,31 @@ void main() {
     return points;
   }
 
+  function perturbPoints(base, hue) {
+    const aspect = canvas.width / canvas.height;
+    const scale = Math.sqrt(aspect);
+    const width = Math.max(1, Math.round(SAMPLES * scale));
+    const height = Math.max(1, Math.round(SAMPLES / scale));
+    const num = width * height;
+    return base.map((p, idx) => {
+      const x = idx % width;
+      const y = Math.floor(idx / width);
+      const i = num - (height * y + x);
+      let h = hue + 120 * ((Math.round(Math.random() * 4 - 2) + x) / width +
+        (Math.round(Math.random() * 4 - 2) + y) / height) / 2;
+      if (h > 360) h -= 360;
+      const c = 80;
+      const l = 80 - 60 * ((Math.round(Math.random() * 4 - 2) + x) / width +
+        (Math.round(Math.random() * 4 - 2) + y) / height) / 2 + 20 * (i / num);
+      const rgb = d3.hcl(h, c, l).rgb();
+      return [
+        p[0] + (Math.random() * 0.1 - 0.05),
+        p[1] + (Math.random() * 0.1 - 0.05),
+        [rgb.r / 255, rgb.g / 255, rgb.b / 255]
+      ];
+    });
+  }
+
   function pointsFromImage(img) {
     const aspect = canvas.width / canvas.height;
     const scale = Math.sqrt(aspect);
@@ -201,7 +226,7 @@ void main() {
   }
 
   const changeInterval = setInterval(() => {
-    setTarget(randomPoints(Math.random() * 360));
+    setTarget(perturbPoints(currentPoints, Math.random() * 360));
   }, 10000);
 
   document.ondragover = e => {
