@@ -61,8 +61,10 @@ void main() {
   const colorBuffer = gl.createBuffer();
 
   function randomPoints(hue) {
-    const width = SAMPLES;
-    const height = SAMPLES;
+    const aspect = canvas.width / canvas.height;
+    const scale = Math.sqrt(aspect);
+    const width = Math.max(1, Math.round(SAMPLES * scale));
+    const height = Math.max(1, Math.round(SAMPLES / scale));
     const num = width * height;
     const points = [];
     for (let y = 0; y < height; y++) {
@@ -84,8 +86,10 @@ void main() {
   }
 
   function pointsFromImage(img) {
-    const samplesX = SAMPLES;
-    const samplesY = SAMPLES;
+    const aspect = canvas.width / canvas.height;
+    const scale = Math.sqrt(aspect);
+    const samplesX = Math.max(1, Math.round(SAMPLES * scale));
+    const samplesY = Math.max(1, Math.round(SAMPLES / scale));
     const ctx = document.createElement('canvas').getContext('2d');
     ctx.drawImage(img, 0, 0, samplesX, samplesY);
     const pixels = ctx.getImageData(0, 0, samplesX, samplesY).data;
