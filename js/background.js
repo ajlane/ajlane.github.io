@@ -113,29 +113,26 @@ void main() {
   }
 
   function setTarget(points) {
-    if (progress > 0 && progress < 1) {
-      const now = performance.now();
-      currentPoints = interpolatePoints(now - lastTime);
-      lastTime = now;
-    }
+    const now = performance.now();
+    currentPoints = interpolatePoints(now - lastTime);
+    lastTime = now;
+    fromPoints = currentPoints.slice();
     targetPoints = points;
     progress = 0;
   }
 
-  let currentPoints = randomPoints(Math.random() * 360);
+  let fromPoints = randomPoints(Math.random() * 360);
   let targetPoints = randomPoints(Math.random() * 360);
+  let currentPoints = fromPoints;
   let progress = 0;
-  const duration = 10000;
-  let lastTime = 0;
+  const duration = 5000;
+  let lastTime = performance.now();
 
   function interpolatePoints(dt) {
     progress += dt / duration;
-    if (progress >= 1) {
-      progress = 1;
-      currentPoints = targetPoints;
-    }
+    if (progress >= 1) progress = 1;
     const t = progress * progress * (3 - 2 * progress);
-    return currentPoints.map((p, i) => {
+    currentPoints = fromPoints.map((p, i) => {
       const np = targetPoints[i];
       return [
         p[0] * (1 - t) + np[0] * t,
@@ -147,6 +144,8 @@ void main() {
         ]
       ];
     });
+    if (progress === 1) fromPoints = currentPoints.slice();
+    return currentPoints;
   }
 
   function buildGeometry(points) {
